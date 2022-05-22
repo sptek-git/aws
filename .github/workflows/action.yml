@@ -14,6 +14,11 @@ on:
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
+env:
+  # ghcr: github container registry
+  # https://github.com/features/packages
+  REGISTRY: ghcr.io
+
 jobs:
   # This workflow contains a single job called "build"
   build:
