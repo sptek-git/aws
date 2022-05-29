@@ -1,19 +1,24 @@
-FROM node:erbium-buster-slim
+FROM golang:1.16.3-stretch AS builder
 
-LABEL "repository"="https://github.com/teichae/github-action"
-LABEL "maintainer"="tei.chae <tei.chae@kakao.com>"
+RUN mkdir -p /build
+WORKDIR /build
 
-RUN set -eux ; \
-    apt-get update -y; \
-    apt-get install --no-install-recommends -y \
-    tzdata; \
-    ln -sf /usr/share/zoneinfo/Asia/Seoul /etc/localtime; \
-    mkdir /html; \
-    npm install -g http-server
+COPY . .
+RUN go mod tidy && go mod vendor
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bin/server ./cmd/server
 
-ADD ./index.html /html
+RUN mkdir -p /dist
+WORKDIR /dist
+RUN cp /build/bin/server ./server
 
-WORKDIR /html
-EXPOSE 80
 
-CMD ["http-server", "-p80", "./"]
+FROM golang:alpine3.13
+
+RUN mkdir -p /app
+WORKDIR /app
+
+COPY --chown=0:0 --from=builder /dist /app/
+EXPOSE 9111
+
+ENTRYPOINT ["/app/server"]
+CMD ["-port", "9110"]
